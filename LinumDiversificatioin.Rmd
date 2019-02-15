@@ -59,44 +59,93 @@ st <- max(branching.times(mytree))
 plotRateThroughTime(edata, intervalCol="red", avgCol="red", start.time=st, ylim=c(0,0.2), cex.axis=1,ratetype='netdiv')
 
 
-#######################################################
-## UNTIL HERE. DON'T SEE NEXT CODES
-########################################################
 
-###Marginal probabilities of all nodes
-
-marg_probs <- marginalShiftProbsTree(edata)
-plot.phylo(marg_probs, cex = 0.3)
-
-plot(mytree,use.edge.length=T, label.offset=0.2, no.margin=TRUE, cex=0.3)
-co<-c("blue","white")
-nodelabels(pie=marg_probs$edge.length, piecol = c("blue","white"), cex=0.3)
-
-library(caper)
-clade.members(1756, mytree, tip.labels = T, include.nodes=F)
-
-clade.members(310, mytree, tip.labels = T, include.nodes=F)
-clade.members(149, mytree, tip.labels = T, include.nodes=F)
-clade.members(152, mytree, tip.labels = T, include.nodes=F)
-clade.members(311, mytree, tip.labels = T, include.nodes=F)
-clade.members(162, mytree, tip.labels = T, include.nodes=F)
+```
 
 
+BISSE
 
-###########################################################################
-###branch priors
-branch_priors <- getBranchShiftPriors(mytree, expectedNumberOfShifts = 3)
-branch_priors
-plot(mytree,use.edge.length=T, label.offset=0.2, no.margin=TRUE, cex=0.3)
-co<-c("blue","white")
-nodelabels(pie=branch_priors$edge.length, piecol = c("blue","white"), cex=0.3)
+```{r}
 
-#mo <- marginalOddsRatioBranches(edata, branch_priors)
+mydata <- read.csv ("Final4.csv")
+
+setdiff(mydata$Nombres, mytree$tip.label)
+setdiff(mytree$tip.label,mydata$Nombres)
+
+mytree2 <- drop.tip(mytree,c("L_syriacum", "L_velutinum", "L_cariense", "L_oligophyllum", "L_meletonis", "L_bungei",    "L_unguiculatum", "L_olympicum"  ))
+
+setdiff(mydata$Nombres, mytree2$tip.label)
+setdiff(mytree2$tip.label,mydata$Nombres)
+
+states <- mydata$Pol2
+names(states) <- mydata$Nombres
+phy<-mytree2
+library(diversitree)
+
+#MARKOV
+lik.mk2 <- make.mk2(phy, states)
+fit.mk2 <- find.mle(lik.mk2, c(.1, .1), method="subplex")
+coef(fit.mk2)
+
+lik.mk1 <- constrain(lik.mk2, q10 ~ q01)
+fit.mk1 <- find.mle(lik.mk1, .1, method="subplex")
+anova(fit.mk2, mk1=fit.mk1)
+
+plot(phy, show.tip.label=FALSE, no.margin=TRUE)
+col <- c("#004165", "#eaab00")
+tiplabels(col=col[states+1], pch=19, adj=1)
+nodelabels(col=col[attr(states, "node.state")+1], pch=19)
+
+prior.exp <- make.prior.exponential(10)
+set.seed(1)
+samples <- mcmc(lik.mk2, c(.1, .1), nsteps=5000, prior=prior.exp,w=.1, print.every=0)
+samples <- subset(samples, i > 500)
+mean(samples$q01 > samples$q10)
+col <- c("#004165", "#eaab00")
+profiles.plot(samples[c("q01", "q10")], col.line=col, las=1,legend.pos="topright")
+
+#BISSE
+sampling.f <- 0.6
+lik <- make.bisse(phy, states, sampling.f=sampling.f)
+pars <- c(0.1, 0.2, 0.03, 0.03, 0.01, 0.01)
+lik(pars) 
+p <- starting.point.bisse(phy)
+p
+fit <- find.mle(lik, p)
+fit$lnLik
+round(coef(fit), 3)
+
+plot(phy, show.tip.label=FALSE, no.margin=TRUE)
+col <- c("red", "black")
+tiplabels(col=col[states+1], pch=19, adj=1)
+st <- asr.marginal(lik, coef(fit))
+nodelabels(pie=t(st), piecol=1:2, cex=.5)
 
 
-#other approach
-msc_tree <- maximumShiftCredibility(edata)
-plot(edata)
-addBAMMshifts(edata, method="phylogram", index=msc_tree$sampleindex)
+lik.l <- constrain(lik, lambda1 ~ lambda0)
+fit.l <- find.mle(lik.l, p[argnames(lik.l)])
+fit.l$lnLik
+round(rbind(full=coef(fit), equal.l=coef(fit.l, TRUE)), 3)
+anova(fit, equal.l=fit.l)
+
+lik.q <- constrain(lik, q01 ~ q10)
+fit.q <- find.mle(lik.q, p[argnames(lik.q)])
+fit.q$lnLik
+
+round(rbind(full=coef(fit), equal.l=coef(fit.l, TRUE), equal.q=coef(fit.q, TRUE)), 3)
+anova(fit, equal.l=fit.l, equal.q=fit.q)
+
+
+prior <- make.prior.exponential(1 / (2 * (p[1] - p[3])))
+set.seed(1)
+tmp <- mcmc(lik, fit$par, nsteps=100, prior=prior,lower=0, w=rep(1, 6), print.every=0)
+w <- diff(sapply(tmp[2:7], range))
+w
+samples <- mcmc(lik, fit$par, nsteps=10000, w=w, lower=0, prior=prior,print.every=0)
+
+par(mfrow=c(1,1), mar=c(3, 4, 0, 1))
+col <- c("red", "orange", "blue", "purple", "black", "gray")
+profiles.plot(samples[c("lambda0", "lambda1", "mu0", "mu1", "q01", "q10")], col.line=col, las=1,xlab="Speciation, extinction and transition rate", legend="topright")
+
 ```
 
