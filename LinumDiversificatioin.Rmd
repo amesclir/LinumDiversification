@@ -1,0 +1,102 @@
+---
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+
+Now we are going to work with BAMM
+
+```{r}
+library(BAMMtools)
+library(coda)
+
+## load data
+mytree <- read.tree("tree.tree")
+mcmcout <- read.csv("mcmc_out.txt")
+
+## create edata
+edata <- getEventData(mytree, eventdata = "event_data.txt", burnin=0.15)
+
+
+#### Check convergence
+plot(mcmcout$logLik ~ mcmcout$generation)
+
+burnstart <- floor(0.15 * nrow(mcmcout))
+postburn <- mcmcout[burnstart:nrow(mcmcout), ]
+
+effectiveSize(postburn$N_shifts)
+effectiveSize(postburn$logLik)
+
+
+
+### Shift probabilities
+shift_probs <- summary(edata)
+shift_probs
+
+
+### Bayes factors
+bfmat <- computeBayesFactors(postburn, expectedNumberOfShifts=1, burnin=0.15)
+bfmat
+
+#### PLOT CREDIBLE SHIFTS
+css <- credibleShiftSet(edata, expectedNumberOfShifts=1, threshold=5, set.limit = 0.95)
+css
+plot.credibleshiftset(css,spex = "netdiv")
+
+
+### PLOT BEST SHIFT
+par(mfrow=c(1,1))
+best <- getBestShiftConfiguration(edata, expectedNumberOfShifts=1)
+best
+plot.bammdata(best, lwd = 2,spex = "netdiv",label=T,cex=0.5)
+axisPhylo()
+addBAMMshifts(best, cex=3)
+best$eventData
+
+### RATE through time
+st <- max(branching.times(mytree))
+plotRateThroughTime(edata, intervalCol="red", avgCol="red", start.time=st, ylim=c(0,0.2), cex.axis=1,ratetype='netdiv')
+
+
+#######################################################
+## UNTIL HERE. DON'T SEE NEXT CODES
+########################################################
+
+###Marginal probabilities of all nodes
+
+marg_probs <- marginalShiftProbsTree(edata)
+plot.phylo(marg_probs, cex = 0.3)
+
+plot(mytree,use.edge.length=T, label.offset=0.2, no.margin=TRUE, cex=0.3)
+co<-c("blue","white")
+nodelabels(pie=marg_probs$edge.length, piecol = c("blue","white"), cex=0.3)
+
+library(caper)
+clade.members(1756, mytree, tip.labels = T, include.nodes=F)
+
+clade.members(310, mytree, tip.labels = T, include.nodes=F)
+clade.members(149, mytree, tip.labels = T, include.nodes=F)
+clade.members(152, mytree, tip.labels = T, include.nodes=F)
+clade.members(311, mytree, tip.labels = T, include.nodes=F)
+clade.members(162, mytree, tip.labels = T, include.nodes=F)
+
+
+
+###########################################################################
+###branch priors
+branch_priors <- getBranchShiftPriors(mytree, expectedNumberOfShifts = 3)
+branch_priors
+plot(mytree,use.edge.length=T, label.offset=0.2, no.margin=TRUE, cex=0.3)
+co<-c("blue","white")
+nodelabels(pie=branch_priors$edge.length, piecol = c("blue","white"), cex=0.3)
+
+#mo <- marginalOddsRatioBranches(edata, branch_priors)
+
+
+#other approach
+msc_tree <- maximumShiftCredibility(edata)
+plot(edata)
+addBAMMshifts(edata, method="phylogram", index=msc_tree$sampleindex)
+```
+
