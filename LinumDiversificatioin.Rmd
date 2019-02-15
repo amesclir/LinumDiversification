@@ -141,11 +141,29 @@ set.seed(1)
 tmp <- mcmc(lik, fit$par, nsteps=100, prior=prior,lower=0, w=rep(1, 6), print.every=0)
 w <- diff(sapply(tmp[2:7], range))
 w
-samples <- mcmc(lik, fit$par, nsteps=10000, w=w, lower=0, prior=prior,print.every=0)
+samples <- mcmc(lik, fit$par, nsteps=100000, w=w, lower=0, prior=prior,print.every=1000)
 
 par(mfrow=c(1,1), mar=c(3, 4, 0, 1))
 col <- c("red", "orange", "blue", "purple", "black", "gray")
 profiles.plot(samples[c("lambda0", "lambda1", "mu0", "mu1", "q01", "q10")], col.line=col, las=1,xlab="Speciation, extinction and transition rate", legend="topright")
+
+par(mfrow=c(1,1), mar=c(3, 4, 0, 1))
+col <- c("red", "orange")
+profiles.plot(samples[c("lambda0", "lambda1")], col.line=col, las=1,xlab="Speciation, extinction and transition rate", legend="topright")
+
+par(mfrow=c(1,1), mar=c(3, 4, 0, 1))
+col <- c("blue", "purple")
+profiles.plot(samples[c("mu0", "mu1")], col.line=col, las=1,xlab="Speciation, extinction and transition rate", legend="topright")
+
+par(mfrow=c(1,1), mar=c(3, 4, 0, 1))
+col <- c("black", "gray")
+profiles.plot(samples[c("q01", "q10")], col.line=col, las=1,xlab="Speciation, extinction and transition rate", legend="topright")  
+
+par(mfrow=c(1,1), mar=c(3, 4, 0, 1))
+col <- c("green", "yellow")
+samples$diversification0 <- samples$lambda0 - samples$mu0 
+samples$diversification1 <- samples$lambda1 - samples$mu1 
+profiles.plot(samples[c("diversification0", "diversification1")], col.line=col, las=1,xlab="Speciation, extinction and transition rate", legend="topright")
 
 ```
 
