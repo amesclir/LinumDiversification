@@ -165,5 +165,10 @@ samples$diversification0 <- samples$lambda0 - samples$mu0
 samples$diversification1 <- samples$lambda1 - samples$mu1 
 profiles.plot(samples[c("diversification0", "diversification1")], col.line=col, las=1,xlab="Speciation, extinction and transition rate", legend="topright")
 
+mean(samples$q01 > samples$q10)
+mean(samples$mu0 > samples$mu1)
+mean(samples$lambda0 > samples$lambda1)
+mean(samples$diversification0 > samples$diversification1)
+
 ```
 
