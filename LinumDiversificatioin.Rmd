@@ -67,6 +67,7 @@ BISSE
 
 ```{r}
 
+library(ape)
 mydata <- read.csv ("Final4.csv")
 
 setdiff(mydata$Nombres, mytree$tip.label)
@@ -77,6 +78,12 @@ mytree2 <- drop.tip(mytree,c("L_syriacum", "L_velutinum", "L_cariense", "L_oligo
 setdiff(mydata$Nombres, mytree2$tip.label)
 setdiff(mytree2$tip.label,mydata$Nombres)
 
+write.tree(mytree2, file = "mytree.tree")
+
+
+#############
+mydata <- read.csv ("Final4.csv")
+mytree2 <- read.tree("mytree.tree") 
 states <- mydata$Pol2
 names(states) <- mydata$Nombres
 phy<-mytree2
@@ -95,6 +102,9 @@ plot(phy, show.tip.label=FALSE, no.margin=TRUE)
 col <- c("#004165", "#eaab00")
 tiplabels(col=col[states+1], pch=19, adj=1)
 nodelabels(col=col[attr(states, "node.state")+1], pch=19)
+st <- asr.marginal(lik.mk1 , coef(fit.mk1))
+nodelabels(pie=t(st), piecol=col, cex=.5)
+
 
 prior.exp <- make.prior.exponential(10)
 set.seed(1)
@@ -116,10 +126,10 @@ fit$lnLik
 round(coef(fit), 3)
 
 plot(phy, show.tip.label=FALSE, no.margin=TRUE)
-col <- c("red", "black")
+col <- c("#004165", "#eaab00")
 tiplabels(col=col[states+1], pch=19, adj=1)
 st <- asr.marginal(lik, coef(fit))
-nodelabels(pie=t(st), piecol=1:2, cex=.5)
+nodelabels(pie=t(st), piecol=col, cex=.5)
 
 
 lik.l <- constrain(lik, lambda1 ~ lambda0)
@@ -135,13 +145,18 @@ fit.q$lnLik
 round(rbind(full=coef(fit), equal.l=coef(fit.l, TRUE), equal.q=coef(fit.q, TRUE)), 3)
 anova(fit, equal.l=fit.l, equal.q=fit.q)
 
+lik.m <- constrain(lik, mu1 ~ mu0)
+fit.m <- find.mle(lik.m, p[argnames(lik.m)])
+fit.m$lnLik
+round(rbind(full=coef(fit), equal.l=coef(fit.l, TRUE), equal.q=coef(fit.q, TRUE), equal.m=coef(fit.m, TRUE)), 3)
+anova(fit, equal.l=fit.l, equal.q=fit.q, equal.m = fit.m)
 
 prior <- make.prior.exponential(1 / (2 * (p[1] - p[3])))
 set.seed(1)
 tmp <- mcmc(lik, fit$par, nsteps=100, prior=prior,lower=0, w=rep(1, 6), print.every=0)
 w <- diff(sapply(tmp[2:7], range))
 w
-samples <- mcmc(lik, fit$par, nsteps=100000, w=w, lower=0, prior=prior,print.every=1000)
+samples <- mcmc(lik, fit$par, nsteps=1000000, w=w, lower=0, prior=prior,print.every=1000)
 
 par(mfrow=c(1,1), mar=c(3, 4, 0, 1))
 col <- c("red", "orange", "blue", "purple", "black", "gray")
@@ -169,6 +184,29 @@ mean(samples$q01 > samples$q10)
 mean(samples$mu0 > samples$mu1)
 mean(samples$lambda0 > samples$lambda1)
 mean(samples$diversification0 > samples$diversification1)
+
+```
+
+
+GEOSSE
+
+```{r}
+library(diversitree)
+
+phy <- read.tree("tree.tree")
+mydata2 <- read.csv ("mydata.csv")
+states <- as.character(mydata2$Area)
+names(states) <- mydata2$Species
+
+setdiff(phy$tip.label, names(states))
+setdiff(names(states),phy$tip.label)
+
+p <- starting.point.geosse(phy)
+p
+
+lik1 <- make.geosse(phy, states)
+lik2 <- constrain(lik1, sAB ~ 0)
+lik3 <- constrain(lik1, sA ~ sB, xA ~ xB)
 
 ```
 
