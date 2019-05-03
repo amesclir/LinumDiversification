@@ -151,6 +151,13 @@ fit.m$lnLik
 round(rbind(full=coef(fit), equal.l=coef(fit.l, TRUE), equal.q=coef(fit.q, TRUE), equal.m=coef(fit.m, TRUE)), 3)
 anova(fit, equal.l=fit.l, equal.q=fit.q, equal.m = fit.m)
 
+lik.l.m <- constrain(lik.m, lambda1 ~ lambda0)
+fit.l.m <- find.mle(lik.l.m, p[argnames(lik.l.m)])
+fit.l.m$lnLik
+round(rbind(full=coef(fit), equal.l=coef(fit.l, TRUE), equal.q=coef(fit.q, TRUE), equal.m=coef(fit.m, TRUE),equal.q.m=coef(fit.l.m, TRUE)), 3)
+anova(fit, equal.l=fit.l, equal.q=fit.q, equal.m = fit.m, equal.l.m = fit.l.m)
+
+
 prior <- make.prior.exponential(1 / (2 * (p[1] - p[3])))
 set.seed(1)
 tmp <- mcmc(lik, fit$par, nsteps=100, prior=prior,lower=0, w=rep(1, 6), print.every=0)
@@ -195,18 +202,61 @@ library(diversitree)
 
 phy <- read.tree("tree.tree")
 mydata2 <- read.csv ("mydata.csv")
-states <- as.character(mydata2$Area)
-names(states) <- mydata2$Species
+states <- as.character(mydata2$Species)
+names(states) <- mydata2$Area
+setdiff(phy$tip.label, states)
+setdiff(states,phy$tip.label)
+phy$tip.state <- names(states)[match(phy$tip.label,states)]
+names(phy$tip.state) <- states[match(phy$tip.label,states)] 
 
-setdiff(phy$tip.label, names(states))
-setdiff(names(states),phy$tip.label)
+statecols <- c("AB"="purple", "A"="blue", "B"="red")
+plot(phy, tip.color=statecols[phy$tip.state], cex=0.5)
 
 p <- starting.point.geosse(phy)
 p
 
-lik1 <- make.geosse(phy, states)
+phy$tip.state[phy$tip.state == "A"] <- 1
+phy$tip.state[phy$tip.state == "B"] <- 2
+phy$tip.state[phy$tip.state == "AB"] <- 0
+phy$tip.state <- as.numeric(phy$tip.state)
+names(phy$tip.state) <- states[match(phy$tip.label,states)] 
+
+lik1 <- make.geosse(phy, phy$tip.state, sampling.f = c(0.6,0.6,0.6))
 lik2 <- constrain(lik1, sAB ~ 0)
 lik3 <- constrain(lik1, sA ~ sB, xA ~ xB)
+
+ml1 <- find.mle(lik1, p)
+p <- coef(ml1)
+ml2 <- find.mle(lik2, p[argnames(lik2)])
+ml3 <- find.mle(lik3, p[argnames(lik3)])
+
+round(rbind(full = coef(ml1),no.sAB = coef(ml2, TRUE),eq.div = coef(ml3, TRUE)), 3)
+
+anova(ml1, no.sAB = ml2, eq.div = ml3)
+
+
+
+p <- coef(ml2)
+prior <- make.prior.exponential(1/2)
+
+set.seed(1)
+tmp <- mcmc(lik2, p, nsteps=100, prior=prior, w=1, print.every=0)
+w <- diff(sapply(tmp[2:7], quantile, c(0.025, 0.975)))
+
+mcmc2 <- mcmc(lik2, p, nsteps=10000, prior=prior, w=w)
+
+mcmc2diff <- with(mcmc2, data.frame(s.diff=sA-sB,x.diff=xA-xB,d.diff=dA-dB,div.A=sA-xA,div.B=sB-xB))
+colMeans(mcmc2diff > 0)
+col1 <- c("red", "orange", "blue", "purple", "black", "gray")
+col2 <- col1[c(1,3,5)]
+mcmc2diff <- with(mcmc2, data.frame(s.diff=sA-sB, x.diff=xA-xB, d.diff=dA-dB))
+par(mfrow=c(2,1), mar=c(3, 4, 0, 1))
+profiles.plot(mcmc2[2:7], col.line=col1, xlab="", ylab="")
+legend("topright", argnames(lik2), col=col1, lty=1, cex = 0.5)
+profiles.plot(mcmc2diff, col.line=col2, xlab="", ylab="")
+legend("topright", colnames(mcmc2diff), col=col2, lty=1, cex = 0.5)
+title(xlab="rate", ylab="posterior probability density", outer=T, line=-1)
+
 
 ```
 
