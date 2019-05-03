@@ -151,12 +151,6 @@ fit.m$lnLik
 round(rbind(full=coef(fit), equal.l=coef(fit.l, TRUE), equal.q=coef(fit.q, TRUE), equal.m=coef(fit.m, TRUE)), 3)
 anova(fit, equal.l=fit.l, equal.q=fit.q, equal.m = fit.m)
 
-lik.l.m <- constrain(lik.m, lambda1 ~ lambda0)
-fit.l.m <- find.mle(lik.l.m, p[argnames(lik.l.m)])
-fit.l.m$lnLik
-round(rbind(full=coef(fit), equal.l=coef(fit.l, TRUE), equal.q=coef(fit.q, TRUE), equal.m=coef(fit.m, TRUE),equal.q.m=coef(fit.l.m, TRUE)), 3)
-anova(fit, equal.l=fit.l, equal.q=fit.q, equal.m = fit.m, equal.l.m = fit.l.m)
-
 
 prior <- make.prior.exponential(1 / (2 * (p[1] - p[3])))
 set.seed(1)
