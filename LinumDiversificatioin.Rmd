@@ -13,6 +13,10 @@ library(coda)
 
 ## load data
 mytree <- read.tree("tree.tree")
+mytree <- drop.tip (mytree, c("L_tenuifolium2", "L_suffruticosum2", "L_mucronatum2", "L_tenue2", "L_empetrifolium2", "L_aroanium2", "L_decumbens2"))
+write.tree(mytree, file = "tree.tree")
+
+mytree <- read.tree("tree.tree")
 mcmcout <- read.csv("mcmc_out.txt")
 
 ## create edata
@@ -68,7 +72,8 @@ BISSE
 ```{r}
 
 library(ape)
-mydata <- read.csv ("Final4.csv")
+mydata <- read.csv ("./run1/Final4.csv")
+mytree <- read.tree("tree.tree")
 
 setdiff(mydata$Nombres, mytree$tip.label)
 setdiff(mytree$tip.label,mydata$Nombres)
@@ -78,12 +83,18 @@ mytree2 <- drop.tip(mytree,c("L_syriacum", "L_velutinum", "L_cariense", "L_oligo
 setdiff(mydata$Nombres, mytree2$tip.label)
 setdiff(mytree2$tip.label,mydata$Nombres)
 
-write.tree(mytree2, file = "mytree.tree")
+mytree2$tip.label[mytree2$tip.label=="606"] <- "L_virgatum"
+mytree2$tip.label[mytree2$tip.label=="L_setaceum_Het"] <- "L_flos-carmini"
+mytree2$tip.label[mytree2$tip.label=="L_thumbergii"] <- "L_thunbergii"
+
+setdiff(mydata$Nombres, mytree2$tip.label)
+setdiff(mytree2$tip.label,mydata$Nombres)
+write.tree(mytree2, file = "./run1/mytree.tree")
 
 
 #############
-mydata <- read.csv ("Final4.csv")
-mytree2 <- read.tree("mytree.tree") 
+mydata <- read.csv ("./run1/Final4.csv")
+mytree2 <- read.tree("./run1/mytree.tree") 
 states <- mydata$Pol2
 names(states) <- mydata$Nombres
 phy<-mytree2
@@ -157,9 +168,9 @@ set.seed(1)
 tmp <- mcmc(lik, fit$par, nsteps=100, prior=prior,lower=0, w=rep(1, 6), print.every=0)
 w <- diff(sapply(tmp[2:7], range))
 w
-samples <- mcmc(lik, fit$par, nsteps=1000000, w=w, lower=0, prior=prior,print.every=1000)
+samples <- mcmc(lik, fit$par, nsteps=5000, w=w, lower=0, prior=prior,print.every=1000)
 
-load(file = "./run1/samples.RData")
+#load(file = "./run1/samples.RData")
 
 par(mfrow=c(1,1), mar=c(3, 4, 0, 1))
 col <- c("red", "orange", "blue", "purple", "black", "gray")
@@ -198,6 +209,12 @@ states <- as.character(mydata2$Species)
 names(states) <- mydata2$Area
 setdiff(phy$tip.label, states)
 setdiff(states,phy$tip.label)
+phy$tip.label[phy$tip.label=="606"] <- "L_virgatum"
+phy$tip.label[phy$tip.label=="L_setaceum_Het"] <- "L_flos-carmini"
+phy$tip.label[phy$tip.label=="L_thumbergii"] <- "L_thunbergii"
+setdiff(phy$tip.label, states)
+setdiff(states,phy$tip.label)
+
 phy$tip.state <- names(states)[match(phy$tip.label,states)]
 names(phy$tip.state) <- states[match(phy$tip.label,states)] 
 
@@ -235,9 +252,9 @@ set.seed(1)
 tmp <- mcmc(lik2, p, nsteps=100, prior=prior, w=1, print.every=0)
 w <- diff(sapply(tmp[2:7], quantile, c(0.025, 0.975)))
 
-mcmc2 <- mcmc(lik2, p, nsteps=1000000, prior=prior, w=w)
+mcmc2 <- mcmc(lik2, p, nsteps=5000, prior=prior, w=w)
 
-load(file = "./run2/samples2.RData")
+#load(file = "./run2/samples2.RData")
 
 mcmc2diff <- with(mcmc2, data.frame(s.diff=sA-sB,x.diff=xA-xB,d.diff=dA-dB,div.A=sA-xA,div.B=sB-xB))
 colMeans(mcmc2diff > 0)

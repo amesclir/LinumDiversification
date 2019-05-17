@@ -6,6 +6,11 @@ states <- as.character(mydata2$Species)
 names(states) <- mydata2$Area
 setdiff(phy$tip.label, states)
 setdiff(states,phy$tip.label)
+phy$tip.label[phy$tip.label=="606"] <- "L_virgatum"
+phy$tip.label[phy$tip.label=="L_setaceum_Het"] <- "L_flos-carmini"
+phy$tip.label[phy$tip.label=="L_thumbergii"] <- "L_thunbergii"
+setdiff(phy$tip.label, states)
+setdiff(states,phy$tip.label)
 phy$tip.state <- names(states)[match(phy$tip.label,states)]
 names(phy$tip.state) <- states[match(phy$tip.label,states)] 
 

@@ -1,7 +1,7 @@
 Command line: ./bamm -c Bamm.txt
 Git commit id: 8c80095e524e4abd6dfe40499ece8deef45ffc31
-Random seed: 1558030999
-Start time: Thu May 16 20:23:19 2019
+Random seed: 1558085692
+Start time: Fri May 17 11:34:52 2019
 
 Current parameter settings:
        acceptanceInfoFileName    acceptance_info.txt
@@ -90,5 +90,5 @@ updateRateEventNumberForBranch    0.0
  useGlobalSamplingProbability    1
    validateEventConfiguration    0
    writeMeanBranchLengthTrees    0
-End time: Thu May 16 20:42:53 2019
+End time: Fri May 17 11:52:40 2019
 

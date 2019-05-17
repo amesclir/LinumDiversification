@@ -1,6 +1,6 @@
 #$ -S /bin/bash
 #$ -N R_run2
-#$ -wd /home/aescudero/R/
+#$ -wd /home/aescudero/R/run2/
 #$ -o R_run2.salida
 #$ -e R_run2.err
 #$ -q media_simple
